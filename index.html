@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PrintConvert: Convierte imagenes a PNG, JPG, WebP y mas formatos al instante, gratis y 100% privado.">
+    <title>PrintConvert | Conversor de Imagenes Ilimitado</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        /* Ajustes para móviles */
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); width: 100%; max-width: 450px; border: 2px solid transparent; transition: 0.3s; box-sizing: border-box; }
+        
+        .flash-success { border-color: #22c55e !important; }
+        h1 { text-align: center; color: #111827; font-weight: 800; margin-bottom: 20px; font-size: 24px; }
+        
+        .drop-zone { border: 2px dashed #d1d5db; padding: 30px; text-align: center; border-radius: 12px; margin: 15px 0; cursor: pointer; color: #6b7280; transition: 0.2s; }
+        .drop-zone.dragover { border-color: #3b82f6; background-color: #eff6ff; }
+        
+        label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-top: 15px; }
+        select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 16px; }
+        
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.2s; font-size: 15px; }
+        .btn-main { background: #111827; }
+        .btn-download { background: #22c55e; }
+        .btn:hover { opacity: 0.9; }
+        
+        .progress-container { width: 100%; background: #e5e7eb; height: 8px; border-radius: 4px; margin-top: 20px; display: none; overflow: hidden; }
+        .progress-bar { width: 0%; height: 100%; background: #3b82f6; transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="card" id="mainCard">
+    <h1>PrintConvert</h1>
+    <div class="drop-zone" id="dropZone">
+        Arrastra imágenes aquí o haz clic para subir
+        <input type="file" id="fileInput" multiple hidden accept="image/*">
+    </div>
+    <div id="fileList" style="font-size: 12px; color: #6b7280; text-align: center;"></div>
+
+    <label>Formato de Salida:</label>
+    <select id="format">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPG</option>
+        <option value="webp">WebP</option>
+        <option value="avif">AVIF</option>
+        <option value="bmp">BMP</option>
+        <option value="tiff">TIFF</option>
+        <option value="gif">GIF</option>
+        <option value="x-icon">ICO</option>
+    </select>
+
+    <button class="btn btn-main" onclick="procesarLote()">Convertir Imágenes</button>
+    <div class="progress-container" id="progContainer"><div class="progress-bar" id="progBar"></div></div>
+    <div id="downloadArea"></div>
+</div>
+
+<script>
+    let archivosSeleccionados = [];
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+
+    dropZone.onclick = () => fileInput.click();
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    };
+    fileInput.onchange = (e) => handleFiles(e.target.files);
+
+    function handleFiles(files) {
+        archivosSeleccionados = Array.from(files);
+        fileList.innerText = `Archivos seleccionados: ${archivosSeleccionados.length}`;
+    }
+
+    async function procesarLote() {
+        if (archivosSeleccionados.length === 0) return alert("Selecciona al menos una imagen");
+
+        const progCont = document.getElementById('progContainer');
+        const progBar = document.getElementById('progBar');
+        const downloadArea = document.getElementById('downloadArea');
+        const card = document.getElementById('mainCard');
+        const format = document.getElementById('format').value;
+        const zip = new JSZip();
+        
+        progCont.style.display = 'block';
+        downloadArea.innerHTML = "";
+        let resultados = [];
+        
+        for (let i = 0; i < archivosSeleccionados.length; i++) {
+            const result = await convertirImagen(archivosSeleccionados[i], format);
+            resultados.push(result);
+            progBar.style.width = ((i + 1) / archivosSeleccionados.length) * 100 + "%";
+        }
+
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-download';
+
+        if (resultados.length === 1) {
+            btn.innerText = "Descargar imagen convertida";
+            btn.onclick = () => {
+                const link = document.createElement('a');
+                link.href = resultados[0].url;
+                link.download = resultados[0].nombre;
+                link.click();
+            };
+        } else {
+            btn.innerText = "Descargar todas (ZIP)";
+            btn.onclick = async () => {
+                resultados.forEach(res => {
+                    zip.file(res.nombre, res.url.split(',')[1], {base64: true});
+                });
+                const content = await zip.generateAsync({type:"blob"});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = "imagenes_convertidas.zip";
+                link.click();
+            };
+        }
+        
+        downloadArea.appendChild(btn);
+        progCont.style.display = 'none';
+        card.classList.add('flash-success');
+        setTimeout(() => card.classList.remove('flash-success'), 300);
+    }
+
+    function convertirImagen(file, format) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve({
+                        url: canvas.toDataURL('image/' + format),
+                        nombre: file.name.split('.')[0] + '.' + format
+                    });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+</script>
+</body>
+</html>
