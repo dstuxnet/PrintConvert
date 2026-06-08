@@ -21,9 +21,10 @@
         label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-top: 15px; }
         select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 16px; }
         
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.2s; font-size: 15px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; color: white; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.2s; font-size: 15px; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
         .btn-main { background: #111827; }
         .btn-download { background: #22c55e; }
+        .btn-desktop { background: #ffd000; margin-top: 10px; font-size: 13px; }
         .btn:hover { opacity: 0.9; }
         
         .progress-container { width: 100%; background: #e5e7eb; height: 8px; border-radius: 4px; margin-top: 20px; display: none; overflow: hidden; }
@@ -56,6 +57,8 @@
     <button class="btn btn-main" onclick="procesarLote()">Convertir Imágenes</button>
     <div class="progress-container" id="progContainer"><div class="progress-bar" id="progBar"></div></div>
     <div id="downloadArea"></div>
+
+    <a href="https://drive.google.com/drive/folders/1v7r3AUdAedXUYdOy8ntj8KXbkbocTHK4?usp=drive_link" target="_blank" class="btn btn-desktop">Descargar PrintConvert</a>
 </div>
 
 <script>
